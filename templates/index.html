@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNN Vision Lab – Interactive CNN Image Classification & Architecture Visualization</title>
+  <meta name="description" content="CNN Vision Lab: An interactive system for CNN image classification and architecture visualization built with TensorFlow/Keras and Flask. BCA Neural Network Project." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🧠</div>
+      <div class="brand-text">
+        <span class="brand-title">CNN Vision Lab</span>
+        <span class="brand-sub">Neural Network Project</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="classify" id="nav-classify">
+        <span class="nav-icon">🔍</span><span class="nav-label">Classify Image</span>
+      </a>
+      <a href="#" class="nav-item" data-page="architecture" id="nav-architecture">
+        <span class="nav-icon">🏗️</span><span class="nav-label">CNN Architecture</span>
+      </a>
+      <a href="#" class="nav-item" data-page="learn" id="nav-learn">
+        <span class="nav-icon">📚</span><span class="nav-label">Learn CNN</span>
+      </a>
+      <a href="#" class="nav-item" data-page="performance" id="nav-performance">
+        <span class="nav-icon">📊</span><span class="nav-label">Model Performance</span>
+      </a>
+      <a href="#" class="nav-item" data-page="history" id="nav-history">
+        <span class="nav-icon">🕓</span><span class="nav-label">Prediction History</span>
+      </a>
+      <a href="#" class="nav-item" data-page="about" id="nav-about">
+        <span class="nav-icon">ℹ️</span><span class="nav-label">About Project</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-status" id="sidebar-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-label">Connecting…</span>
+    </div>
+  </aside>
+
+  <!-- ── Mobile hamburger ─────────────────────────────────── -->
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ── Main content ─────────────────────────────────────── -->
+  <main class="main" id="main">
+
+    <!-- ═══════════════════ DASHBOARD ═══════════════════════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Welcome to CNN Vision Lab</h1>
+        <p class="page-sub">Interactive CNN Image Classification &amp; Architecture Visualization System</p>
+      </div>
+
+      <div class="dash-hero">
+        <div class="dash-hero-text">
+          <h2>What is a CNN?</h2>
+          <p>A <strong>Convolutional Neural Network (CNN)</strong> is a deep learning architecture designed to process grid-like data such as images. It automatically learns spatial hierarchies of features — from low-level edges to high-level object parts — through a series of learnable filters.</p>
+          <p>This lab uses <strong>MobileNetV2</strong>, a pretrained CNN with ImageNet weights, to classify real images into 1,000 categories with fast, accurate inference.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="navigateTo('classify')">Try Image Classification</button>
+            <button class="btn btn-outline" onclick="navigateTo('architecture')">Explore Architecture</button>
+          </div>
+        </div>
+        <div class="dash-hero-visual">
+          <div class="cnn-mini-diagram">
+            <div class="mini-layer" title="Input Image">🖼️<span>Input</span></div>
+            <div class="mini-arrow">→</div>
+            <div class="mini-layer" title="Convolution">⚙️<span>Conv</span></div>
+            <div class="mini-arrow">→</div>
+            <div class="mini-layer" title="Pooling">⬇️<span>Pool</span></div>
+            <div class="mini-arrow">→</div>
+            <div class="mini-layer" title="Dense">🔗<span>Dense</span></div>
+            <div class="mini-arrow">→</div>
+            <div class="mini-layer" title="Output">🏷️<span>Output</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-4">
+        <div class="stat-card" id="dash-model-card">
+          <div class="stat-icon">🤖</div>
+          <div class="stat-value" id="dash-model-name">—</div>
+          <div class="stat-label">Active Model</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏷️</div>
+          <div class="stat-value">1,000</div>
+          <div class="stat-label">ImageNet Classes</div>
+        </div>
+        <div class="stat-card" id="dash-history-card">
+          <div class="stat-icon">🕓</div>
+          <div class="stat-value" id="dash-history-count">0</div>
+          <div class="stat-label">Predictions Made</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value">224×224</div>
+          <div class="stat-label">Input Resolution</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3>Recent Predictions</h3>
+            <button class="btn btn-sm btn-outline" onclick="navigateTo('history')">View All</button>
+          </div>
+          <div id="dash-recent-list" class="recent-list"><p class="empty-state">No predictions yet. Try the classifier!</p></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Quick Links</h3></div>
+          <div class="quick-links">
+            <button class="quick-link-btn" onclick="navigateTo('classify')">
+              <span>🔍</span><div><strong>Classify an Image</strong><small>Upload a photo and get instant predictions</small></div>
+            </button>
+            <button class="quick-link-btn" onclick="navigateTo('architecture')">
+              <span>🏗️</span><div><strong>CNN Architecture</strong><small>Interactive layer-by-layer diagram</small></div>
+            </button>
+            <button class="quick-link-btn" onclick="navigateTo('learn')">
+              <span>📚</span><div><strong>Learn CNN</strong><small>10 educational modules + quiz</small></div>
+            </button>
+            <button class="quick-link-btn" onclick="navigateTo('performance')">
+              <span>📊</span><div><strong>Model Performance</strong><small>Metrics, parameters, evaluation</small></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ CLASSIFY ════════════════════════ -->
+    <section class="page" id="page-classify">
+      <div class="page-header">
+        <h1 class="page-title">Image Classification</h1>
+        <p class="page-sub">Upload an image and let MobileNetV2 classify it using ImageNet weights</p>
+      </div>
+
+      <div class="notice-banner">
+        <strong>ℹ️ Note:</strong> This classifier uses MobileNetV2 pretrained on ImageNet and can recognise <strong>1,000 object categories</strong>. It may produce incorrect or unexpected results on images outside its training distribution.
+      </div>
+
+      <div class="classify-layout">
+        <!-- Upload panel -->
+        <div class="card upload-card">
+          <div class="card-header"><h3>Upload Image</h3></div>
+
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept=".jpg,.jpeg,.png" hidden />
+            <div class="dropzone-content" id="dropzone-content">
+              <div class="drop-icon">📁</div>
+              <p><strong>Drag &amp; drop</strong> an image here</p>
+              <p class="drop-hint">JPG, JPEG, PNG · max 10 MB</p>
+              <button class="btn btn-primary" id="browse-btn">Browse Files</button>
+            </div>
+            <div class="preview-wrapper" id="preview-wrapper" hidden>
+              <img id="img-preview" src="" alt="Image preview" />
+              <div class="preview-actions">
+                <button class="btn btn-outline btn-sm" id="change-img-btn">Change Image</button>
+                <button class="btn btn-primary" id="predict-btn">Classify</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-header" style="margin-top:1.5rem"><h3>Sample Images</h3></div>
+          <div class="sample-grid" id="sample-grid">
+            <!-- Populated by JS -->
+            <p class="empty-state" style="grid-column:1/-1">Loading samples…</p>
+          </div>
+        </div>
+
+        <!-- Results panel -->
+        <div class="card results-card" id="results-card">
+          <div class="card-header"><h3>Results</h3></div>
+          <div id="results-area">
+            <div class="results-empty">
+              <div class="results-empty-icon">🔍</div>
+              <p>Upload an image and click <strong>Classify</strong> to see predictions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature maps -->
+      <div class="card" id="feature-maps-card" style="display:none">
+        <div class="card-header">
+          <h3>Feature Maps — Conv1 Activations</h3>
+          <span class="badge">Actual model output</span>
+        </div>
+        <p class="card-desc">These are the <em>actual</em> activation maps from the first convolutional layer of MobileNetV2 for your image. Each tile shows how one filter responds to the input.</p>
+        <div class="feature-maps-grid" id="feature-maps-grid"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ ARCHITECTURE ════════════════════ -->
+    <section class="page" id="page-architecture">
+      <div class="page-header">
+        <h1 class="page-title">CNN Architecture Visualizer</h1>
+        <p class="page-sub">Click any layer to learn more about it</p>
+      </div>
+
+      <div class="notice-banner">
+        <strong>📌 Note:</strong> The diagram below shows a <strong>simplified canonical CNN workflow</strong>. MobileNetV2's internal structure uses depthwise separable convolutions and inverted residual blocks — described in detail in the MobileNetV2 section below.
+      </div>
+
+      <!-- Simplified CNN diagram -->
+      <div class="card">
+        <div class="card-header"><h3>Simplified CNN Workflow</h3></div>
+        <div class="arch-diagram" id="arch-diagram">
+          <!-- Layers injected by JS -->
+        </div>
+        <div class="layer-detail-panel" id="layer-detail-panel">
+          <p class="layer-detail-hint">👆 Click a layer above to see its details</p>
+        </div>
+      </div>
+
+      <!-- MobileNetV2 actual structure -->
+      <div class="card">
+        <div class="card-header"><h3>MobileNetV2 — Actual Architecture</h3></div>
+        <p class="card-desc">MobileNetV2 does <em>not</em> use standard conv → pool blocks. Its key innovations are:</p>
+        <div class="mobilenet-overview">
+          <div class="mv2-block">
+            <div class="mv2-title">1. Depthwise Separable Convolution</div>
+            <div class="mv2-desc">Splits standard conv into a depthwise conv (per-channel spatial filter) + a pointwise 1×1 conv. Reduces computation by ~8–9×.</div>
+          </div>
+          <div class="mv2-block">
+            <div class="mv2-title">2. Inverted Residual Blocks</div>
+            <div class="mv2-desc">Expands channels in bottleneck (expansion ratio 6), applies depthwise conv, then projects back to fewer channels. Skip connection added when input == output shape.</div>
+          </div>
+          <div class="mv2-block">
+            <div class="mv2-title">3. Global Average Pooling</div>
+            <div class="mv2-desc">Replaces Flatten + large Dense layers. Averages each feature map to a single number, dramatically reducing parameters.</div>
+          </div>
+          <div class="mv2-block">
+            <div class="mv2-title">4. Final Dense (1000)</div>
+            <div class="mv2-desc">Softmax over 1,000 ImageNet classes. Total parameters ≈ 3.5 M — very efficient for mobile deployment.</div>
+          </div>
+        </div>
+
+        <div id="mv2-layer-table-wrap">
+          <h4 style="margin:1.5rem 0 0.75rem">Key Layers in MobileNetV2 (selected)</h4>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Layer Name</th><th>Type</th><th>Output Shape</th><th>Parameters</th></tr></thead>
+              <tbody id="mv2-table-body"><tr><td colspan="5" class="empty-state">Load model to see layer details</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ LEARN CNN ════════════════════════ -->
+    <section class="page" id="page-learn">
+      <div class="page-header">
+        <h1 class="page-title">Learn CNN</h1>
+        <p class="page-sub">10 educational modules covering CNN fundamentals from scratch</p>
+      </div>
+
+      <div class="learn-layout">
+        <div class="learn-sidebar">
+          <ul class="learn-nav" id="learn-nav">
+            <!-- Injected by JS -->
+          </ul>
+        </div>
+        <div class="learn-content" id="learn-content">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Quiz -->
+      <div class="card quiz-card" id="quiz-section">
+        <div class="card-header"><h3>🧩 Quick Quiz</h3><span class="badge">10 Questions</span></div>
+        <div id="quiz-container">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ PERFORMANCE ══════════════════════ -->
+    <section class="page" id="page-performance">
+      <div class="page-header">
+        <h1 class="page-title">Model Performance</h1>
+        <p class="page-sub">Metrics, parameters, and evaluation results</p>
+      </div>
+
+      <div class="notice-banner" id="perf-notice">
+        <strong>ℹ️ Note:</strong> Accuracy and loss shown are from the <em>official MobileNetV2 paper</em> benchmarks on ImageNet. Custom training evaluation (if run) will appear here automatically once <code>training/train_cnn.py</code> has been executed.
+      </div>
+
+      <div class="grid-4" id="perf-stat-row">
+        <div class="stat-card"><div class="stat-icon">🏷️</div><div class="stat-value" id="perf-model-name">—</div><div class="stat-label">Model</div></div>
+        <div class="stat-card"><div class="stat-icon">🧮</div><div class="stat-value" id="perf-total-params">—</div><div class="stat-label">Total Parameters</div></div>
+        <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-value" id="perf-top1">72.0%</div><div class="stat-label">Top-1 Accuracy (paper)</div></div>
+        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value" id="perf-top5">90.6%</div><div class="stat-label">Top-5 Accuracy (paper)</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3>Benchmark Details</h3></div>
+          <table class="data-table" id="perf-details-table">
+            <tbody>
+              <tr><td>Model Name</td><td id="td-model-name">MobileNetV2</td></tr>
+              <tr><td>Model Type</td><td id="td-model-type">Pretrained – ImageNet</td></tr>
+              <tr><td>Input Shape</td><td>224 × 224 × 3</td></tr>
+              <tr><td>Output Classes</td><td>1,000 (ImageNet)</td></tr>
+              <tr><td>Total Params</td><td id="td-total-params">Loading…</td></tr>
+              <tr><td>Top-1 Acc (paper)</td><td>72.0%</td></tr>
+              <tr><td>Top-5 Acc (paper)</td><td>90.6%</td></tr>
+              <tr><td>Source</td><td>Sandler et al., 2018 (MobileNetV2 paper)</td></tr>
+            </tbody>
+          </table>
+          <p class="card-desc" style="margin-top:1rem">
+            <strong>Important:</strong> The accuracy values above are the original benchmark results measured by Google on the full ImageNet validation set (50,000 images). They are <em>not</em> computed by this application.
+          </p>
+        </div>
+
+        <div class="card" id="custom-eval-card" style="display:none">
+          <div class="card-header"><h3>Custom Training Results</h3><span class="badge badge-green">From training/train_cnn.py</span></div>
+          <table class="data-table">
+            <tbody>
+              <tr><td>Model</td><td id="custom-model-name">—</td></tr>
+              <tr><td>Dataset</td><td id="custom-dataset">—</td></tr>
+              <tr><td>Classes</td><td id="custom-classes">—</td></tr>
+              <tr><td>Test Loss</td><td id="custom-loss">—</td></tr>
+              <tr><td>Test Accuracy</td><td id="custom-acc">—</td></tr>
+            </tbody>
+          </table>
+          <p class="card-desc" id="custom-note" style="margin-top:1rem"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Understanding Train / Val / Test Splits</h3></div>
+        <div class="splits-explainer">
+          <div class="split-item">
+            <div class="split-badge split-train">Train</div>
+            <div><strong>Training Data</strong><br>Used to update the model weights via backpropagation. Typically 70–80% of the dataset.</div>
+          </div>
+          <div class="split-item">
+            <div class="split-badge split-val">Val</div>
+            <div><strong>Validation Data</strong><br>Used to tune hyperparameters and check for overfitting during training. Typically 10–15%.</div>
+          </div>
+          <div class="split-item">
+            <div class="split-badge split-test">Test</div>
+            <div><strong>Test Data</strong><br>Held-out set used <em>only once</em> after training is complete to give an unbiased estimate of real-world performance. Typically 10–15%.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ HISTORY ══════════════════════════ -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <h1 class="page-title">Prediction History</h1>
+        <p class="page-sub">All predictions stored in SQLite — <span id="history-total">0</span> records total</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Predictions</h3>
+          <button class="btn btn-danger btn-sm" id="clear-history-btn">Clear All</button>
+        </div>
+        <div id="history-container">
+          <p class="empty-state">No predictions yet.</p>
+        </div>
+        <div class="pagination-row" id="pagination-row" style="display:none">
+          <button class="btn btn-outline btn-sm" id="hist-prev-btn">← Previous</button>
+          <span id="hist-page-info">Page 1</span>
+          <button class="btn btn-outline btn-sm" id="hist-next-btn">Next →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ ABOUT ═════════════════════════════ -->
+    <section class="page" id="page-about">
+      <div class="page-header">
+        <h1 class="page-title">About This Project</h1>
+        <p class="page-sub">BCA Neural Network Subject Project — CNN Vision Lab</p>
+      </div>
+
+      <div class="about-grid">
+
+        <div class="card">
+          <div class="card-header"><h3>🎯 Project Objective</h3></div>
+          <p>To design, implement, and demonstrate a complete web-based application that showcases how a Convolutional Neural Network works in practice — from raw pixel input to classification output — using real model inference, interactive visualizations, and educational content.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>❓ Problem Statement</h3></div>
+          <p>Traditional neural network courses lack interactive tools that let students observe the actual internal workings of a CNN. This project bridges that gap by providing a hands-on platform where every stage of inference — convolution, activation, pooling, classification — can be explored with real model outputs.</p>
+        </div>
+
+        <div class="card about-wide">
+          <div class="card-header"><h3>🏗️ CNN Architecture</h3></div>
+          <div class="about-arch-steps">
+            <div class="about-step"><strong>1. Input</strong> – Raw pixel data (224×224×3 for MobileNetV2)</div>
+            <div class="about-arrow">→</div>
+            <div class="about-step"><strong>2. Conv + ReLU</strong> – Learnable filters detect spatial patterns</div>
+            <div class="about-arrow">→</div>
+            <div class="about-step"><strong>3. Pooling</strong> – Reduces spatial dimensions, retains important features</div>
+            <div class="about-arrow">→</div>
+            <div class="about-step"><strong>4. Repeat</strong> – Deeper layers learn abstract features</div>
+            <div class="about-arrow">→</div>
+            <div class="about-step"><strong>5. GAP / Flatten</strong> – Converts feature maps to a vector</div>
+            <div class="about-arrow">→</div>
+            <div class="about-step"><strong>6. Dense + Softmax</strong> – Produces class probabilities</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🛠️ Technology Stack</h3></div>
+          <div class="tech-grid">
+            <div class="tech-item"><div class="tech-icon">🐍</div><div><strong>Python 3.10+</strong><br>Backend language</div></div>
+            <div class="tech-item"><div class="tech-icon">⚗️</div><div><strong>Flask 3</strong><br>Web framework</div></div>
+            <div class="tech-item"><div class="tech-icon">🧠</div><div><strong>TensorFlow / Keras</strong><br>Deep learning</div></div>
+            <div class="tech-item"><div class="tech-icon">🖼️</div><div><strong>Pillow</strong><br>Image processing</div></div>
+            <div class="tech-item"><div class="tech-icon">🗄️</div><div><strong>SQLite</strong><br>Prediction history</div></div>
+            <div class="tech-item"><div class="tech-icon">📊</div><div><strong>Chart.js</strong><br>Frontend charts</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>⚙️ Workflow</h3></div>
+          <ol class="about-list">
+            <li>User uploads an image via the browser.</li>
+            <li>JavaScript validates type and size client-side.</li>
+            <li>Flask validates the upload server-side.</li>
+            <li>Pillow reads and resizes the image to 224×224.</li>
+            <li>MobileNetV2 preprocessing normalises pixel values.</li>
+            <li>Model runs forward propagation and returns 1,000-class probabilities.</li>
+            <li>Top-3 predictions decoded from ImageNet class labels.</li>
+            <li>Result stored in SQLite and returned to the browser.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🌍 Applications of CNNs</h3></div>
+          <ul class="about-list">
+            <li>Medical imaging — tumour detection, X-ray analysis</li>
+            <li>Autonomous vehicles — object and pedestrian detection</li>
+            <li>Facial recognition and biometrics</li>
+            <li>Document OCR and handwriting recognition</li>
+            <li>Agricultural disease detection in crops</li>
+            <li>Quality control in manufacturing</li>
+            <li>Content moderation on social platforms</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>⚠️ Limitations</h3></div>
+          <ul class="about-list">
+            <li>MobileNetV2 is pretrained on ImageNet; it cannot recognise arbitrary objects outside those 1,000 classes.</li>
+            <li>Predictions can be wrong — no model achieves 100% accuracy.</li>
+            <li>Custom training requires a GPU or significant time on CPU.</li>
+            <li>The feature-map visualisation shows only the first conv layer.</li>
+            <li>The app does not retain uploaded images after prediction.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🚀 Future Enhancements</h3></div>
+          <ul class="about-list">
+            <li>Support for additional models (ResNet50, EfficientNet, VGG16).</li>
+            <li>Grad-CAM visualisation to highlight which image regions influenced predictions.</li>
+            <li>Drag-and-drop multi-image batch classification.</li>
+            <li>Training progress visualised in real-time via WebSocket.</li>
+            <li>Export predictions and metrics as a PDF report.</li>
+          </ul>
+        </div>
+
+        <div class="card about-wide">
+          <div class="card-header"><h3>🎓 Viva Questions &amp; Answers</h3></div>
+          <div class="viva-list" id="viva-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+      </div><!-- /about-grid -->
+    </section>
+
+  </main><!-- /main -->
+
+  <!-- ── Loading overlay ────────────────────────────────────── -->
+  <div class="loading-overlay hidden" id="loading-overlay" hidden style="display: none;">
+    <div class="spinner"></div>
+    <p id="loading-text">Classifying image…</p>
+  </div>
+
+  <!-- ── Toast container ────────────────────────────────────── -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
